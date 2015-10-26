@@ -1,0 +1,12 @@
+int var_tlsp_tls_ask_ccert;
+int var_psc_enforce_tls;
+int var_psc_disable_vrfy;
+int var_tlsp_tls_set_sessid;
+int var_smtpd_rec_deadline;
+int var_tlsp_tls_req_ccert;
+int var_tlsp_enforce_tls;
+int var_tlsp_use_tls;
+int var_append_dot_mydomain;
+int var_psc_helo_required;
+int var_smtputf8_enable;
+int var_psc_use_tls;

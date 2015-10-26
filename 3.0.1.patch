@@ -1,0 +1,370 @@
+Prereq: "3.0.0"
+diff -ur --new-file /var/tmp/postfix-3.0.0/src/global/mail_version.h ./src/global/mail_version.h
+--- /var/tmp/postfix-3.0.0/src/global/mail_version.h	2015-02-08 12:25:17.000000000 -0500
++++ ./src/global/mail_version.h	2015-04-12 17:34:37.000000000 -0400
+@@ -20,8 +20,8 @@
+   * Patches change both the patchlevel and the release date. Snapshots have no
+   * patchlevel; they change the release date only.
+   */
+-#define MAIL_RELEASE_DATE	"20150208"
+-#define MAIL_VERSION_NUMBER	"3.0.0"
++#define MAIL_RELEASE_DATE	"20150412"
++#define MAIL_VERSION_NUMBER	"3.0.1"
+ 
+ #ifdef SNAPSHOT
+ #define MAIL_VERSION_DATE	"-" MAIL_RELEASE_DATE
+diff -ur --new-file /var/tmp/postfix-3.0.0/HISTORY ./HISTORY
+--- /var/tmp/postfix-3.0.0/HISTORY	2015-02-08 12:04:52.000000000 -0500
++++ ./HISTORY	2015-04-04 18:54:45.000000000 -0400
+@@ -17919,7 +17919,7 @@
+ 
+ 20120824
+ 
+-	Feature: support for "sendmail -R hdrs|full". Jan Kundrát.
++	Feature: support for "sendmail -R hdrs|full". Jan Kundr?t.
+ 	File: sendmail/sendmail.c.
+ 
+ 20120902
+@@ -21453,7 +21453,7 @@
+ 	tls/tls_client.c, util/dict_alloc.c, util/dict_open.c,
+ 	util/match_list.c.
+ 
+-20150214
++20150124
+ 
+ 	Workaround: nroff has been improved so that "-" comes out as
+ 	some non-ASCII character, unlike HTML where it comes out
+@@ -21461,12 +21461,10 @@
+ 	hops to generate HTML and nroff input from the same source
+ 	text.  Files; mantools/srctoman, mantools/postconf2man.
+ 
+-20150524
+-
+ 	Cleanup: UTF-8 support in masquerade_domains.  File:
+ 	cleanup/cleanup_masquerade.c.
+ 
+-20150525
++20150125
+ 
+ 	Cleanup: simplified the casefold() API: no input-dependent
+ 	failure modes. Files: cleanup/cleanup_masquerade.c,
+@@ -21502,7 +21500,7 @@
+ 
+ 20150127
+ 
+-	Cleanup: simplified the 20150525 and 20150126 APIs, replacing
++	Cleanup: simplified the 20150125 and 20150126 APIs, replacing
+ 	the most-common use cases with convenience macros that have
+ 	fewer arguments. Files: anything that implements or invokes
+ 	casefold*() or str*casecmp().
+@@ -21595,3 +21593,55 @@
+ 	Cleanup: after many years, the access(5) map BCC action is
+ 	part of the stable release. Files: smtpd/smtpd_check.c,
+ 	proto/acces.
++
++20150211
++
++	Cleanup: strncasecmp_utf8() streamlining. Files: util/stringops.h,
++	util/allascii.c, util/strcasecmp_utf8.c.
++
++20150214
++
++	Bugfix (introduced: Postfix 3.0): missing #ifdef USE_TLS
++	inside #ifdef USE_SASL_AUTH.  Viktor Dukhovni. File:
++	smtpd/smtpd.c.
++
++20150217
++
++	Cleanup: missing <string.h> include. File: util/allascii.c.
++
++20150221
++
++	Bugfix (introduced: Postfix 3.0): don't append '.' to the
++	DNS resource record value, when converting TXT records to
++	the string form that is used used by xxx_dns_reply_filter.
++	File: dns/dns_strrecord.c.
++
++20150313
++
++	Documentation: incorrect Postfix version number for
++	postscreen_dnsbl_timeout. Quanah Gibson-Mount. File:
++	postscreen/postscreen.c.
++
++20150324
++
++	Bugfix (introduced: Postfix 2.6): sender_dependent_relayhost_maps
++	ignored the relayhost setting in the case of a DUNNO lookup
++	result.  It would use the recipient domain instead.  Viktor
++	Dukhovni. Wietse took the pieces of code that enforce the
++	precedence of a sender-dependent relayhost, the global
++	relayhost, and the recipient domain, and put that code
++	together in once place so that it is easier to maintain.
++	File: trivial-rewrite/resolve.c.
++
++20150328
++
++	Bugfix (introduced: Postfix 1.1.0): post-install expanded
++	macros in parameter values when trying to detect parameter
++	overrides, causing unnecessary main.cf updates during Postfix
++	start-up. Julian Reich, Viktor Dukhovni, and Wietse.  File:
++	conf/post-install.
++
++20150330
++
++	Bitrot: prepare for future changes in OpenSSL API. Viktor
++	Dukhovni. File: tls_dane.c.
+diff -ur --new-file /var/tmp/postfix-3.0.0/conf/post-install ./conf/post-install
+--- /var/tmp/postfix-3.0.0/conf/post-install	2014-06-28 08:49:13.000000000 -0400
++++ ./conf/post-install	2015-03-28 20:31:36.000000000 -0400
+@@ -447,10 +447,14 @@
+     esac
+ done
+ 
++# XXX Maybe update main.cf only with first install, upgrade, set
++# permissions, and what else? Should there be a warning otherwise?
++
+ override=
+ for name in $MOST_PARAMETERS
+ do
+-    eval test \"\$$name\" = \"`$POSTCONF -c $config_directory -h $name`\" || {
++    eval junk=\"\$$name\"
++    test "$junk" = "`$POSTCONF -c $config_directory -h $name`" || {
+ 	override=1
+ 	break
+     }
+diff -ur --new-file /var/tmp/postfix-3.0.0/html/postscreen.8.html ./html/postscreen.8.html
+--- /var/tmp/postfix-3.0.0/html/postscreen.8.html	2015-01-29 17:21:03.000000000 -0500
++++ ./html/postscreen.8.html	2015-04-04 09:39:38.000000000 -0400
+@@ -228,7 +228,7 @@
+               greeting" protocol tests, based on its combined DNSBL  score  as
+               defined with the <a href="postconf.5.html#postscreen_dnsbl_sites">postscreen_dnsbl_sites</a> parameter.
+ 
+-       Available in Postfix version 2.11 and later:
++       Available in Postfix version 3.0 and later:
+ 
+        <b><a href="postconf.5.html#postscreen_dnsbl_timeout">postscreen_dnsbl_timeout</a> (10s)</b>
+               The time limit for DNSBL or DNSWL lookups.
+diff -ur --new-file /var/tmp/postfix-3.0.0/man/man8/postscreen.8 ./man/man8/postscreen.8
+--- /var/tmp/postfix-3.0.0/man/man8/postscreen.8	2015-01-29 17:21:01.000000000 -0500
++++ ./man/man8/postscreen.8	2015-04-04 09:39:38.000000000 -0400
+@@ -249,7 +249,7 @@
+ greeting" protocol tests, based on its combined DNSBL score as
+ defined with the postscreen_dnsbl_sites parameter.
+ .PP
+-Available in Postfix version 2.11 and later:
++Available in Postfix version 3.0 and later:
+ .IP "\fBpostscreen_dnsbl_timeout (10s)\fR"
+ The time limit for DNSBL or DNSWL lookups.
+ .SH "AFTER 220 GREETING TESTS"
+diff -ur --new-file /var/tmp/postfix-3.0.0/src/dns/dns_strrecord.c ./src/dns/dns_strrecord.c
+--- /var/tmp/postfix-3.0.0/src/dns/dns_strrecord.c	2014-12-01 13:19:14.000000000 -0500
++++ ./src/dns/dns_strrecord.c	2015-02-21 15:20:41.000000000 -0500
+@@ -1,6 +1,6 @@
+ /*++
+ /* NAME
+-/*	dns_strtype 3
++/*	dns_strrecord 3
+ /* SUMMARY
+ /*	name service resource record printable forms
+ /* SYNOPSIS
+@@ -65,9 +65,11 @@
+     case T_MR:
+     case T_NS:
+     case T_PTR:
+-    case T_TXT:
+ 	vstring_sprintf_append(buf, "%s.", rr->data);
+ 	break;
++    case T_TXT:
++	vstring_sprintf_append(buf, "%s", rr->data);
++	break;
+     case T_MX:
+ 	vstring_sprintf_append(buf, "%u %s.", rr->pref, rr->data);
+ 	break;
+diff -ur --new-file /var/tmp/postfix-3.0.0/src/postscreen/postscreen.c ./src/postscreen/postscreen.c
+--- /var/tmp/postfix-3.0.0/src/postscreen/postscreen.c	2015-01-13 14:58:00.000000000 -0500
++++ ./src/postscreen/postscreen.c	2015-04-04 09:35:35.000000000 -0400
+@@ -221,7 +221,7 @@
+ /*	greeting" protocol tests, based on its combined DNSBL score as
+ /*	defined with the postscreen_dnsbl_sites parameter.
+ /* .PP
+-/*	Available in Postfix version 2.11 and later:
++/*	Available in Postfix version 3.0 and later:
+ /* .IP "\fBpostscreen_dnsbl_timeout (10s)\fR"
+ /*	The time limit for DNSBL or DNSWL lookups.
+ /* AFTER 220 GREETING TESTS
+diff -ur --new-file /var/tmp/postfix-3.0.0/src/smtpd/smtpd.c ./src/smtpd/smtpd.c
+--- /var/tmp/postfix-3.0.0/src/smtpd/smtpd.c	2015-01-30 16:40:05.000000000 -0500
++++ ./src/smtpd/smtpd.c	2015-02-14 08:32:46.000000000 -0500
+@@ -4025,12 +4025,14 @@
+ 	if (got_login)
+ 	    saved_username = mystrdup(state->sasl_username);
+ 	smtpd_sasl_deactivate(state);
+-	if (state->tls_context == 0)		/* TLS from XCLIENT proxy? */
+-	    smtpd_sasl_activate(state, VAR_SMTPD_SASL_OPTS,
+-				var_smtpd_sasl_opts);
+-	else
++#ifdef USE_TLS
++	if (state->tls_context != 0)		/* TLS from XCLIENT proxy? */
+ 	    smtpd_sasl_activate(state, VAR_SMTPD_SASL_TLS_OPTS,
+ 				var_smtpd_sasl_tls_opts);
++	else
++#endif
++	    smtpd_sasl_activate(state, VAR_SMTPD_SASL_OPTS,
++				var_smtpd_sasl_opts);
+ 	if (got_login) {
+ 	    smtpd_sasl_auth_extern(state, saved_username, XCLIENT_CMD);
+ 	    myfree(saved_username);
+diff -ur --new-file /var/tmp/postfix-3.0.0/src/tls/tls_dane.c ./src/tls/tls_dane.c
+--- /var/tmp/postfix-3.0.0/src/tls/tls_dane.c	2015-02-04 14:20:37.000000000 -0500
++++ ./src/tls/tls_dane.c	2015-04-01 08:46:02.000000000 -0400
+@@ -1456,7 +1456,7 @@
+ 
+ static int add_akid(X509 *cert, AUTHORITY_KEYID *akid)
+ {
+-    ASN1_STRING *id;
++    ASN1_OCTET_STRING *id;
+     unsigned char c = 0;
+     int     nid = NID_authority_key_identifier;
+     int     ret = 0;
+@@ -1468,13 +1468,13 @@
+      * exempt from any potential (off by default for now in OpenSSL)
+      * self-signature checks!
+      */
+-    id = (ASN1_STRING *) ((akid && akid->keyid) ? akid->keyid : 0);
+-    if (id && M_ASN1_STRING_length(id) == 1 && *M_ASN1_STRING_data(id) == c)
++    id = ((akid && akid->keyid) ? akid->keyid : 0);
++    if (id && ASN1_STRING_length(id) == 1 && *ASN1_STRING_data(id) == c)
+ 	c = 1;
+ 
+     if ((akid = AUTHORITY_KEYID_new()) != 0
+ 	&& (akid->keyid = ASN1_OCTET_STRING_new()) != 0
+-	&& M_ASN1_OCTET_STRING_set(akid->keyid, (void *) &c, 1)
++	&& ASN1_OCTET_STRING_set(akid->keyid, (void *) &c, 1)
+ 	&& X509_add1_ext_i2d(cert, nid, akid, 0, X509V3_ADD_DEFAULT) > 0)
+ 	ret = 1;
+     if (akid)
+diff -ur --new-file /var/tmp/postfix-3.0.0/src/trivial-rewrite/resolve.c ./src/trivial-rewrite/resolve.c
+--- /var/tmp/postfix-3.0.0/src/trivial-rewrite/resolve.c	2015-01-27 14:33:29.000000000 -0500
++++ ./src/trivial-rewrite/resolve.c	2015-03-25 08:22:46.000000000 -0400
+@@ -591,15 +591,20 @@
+ 		if (*relay == 0) {
+ 		    msg_warn("%s: ignoring null lookup result for %s",
+ 			     rp->snd_relay_maps_name, sender_key);
+-		    relay = "DUNNO";
+-		}
+-		vstring_strcpy(nexthop, strcasecmp(relay, "DUNNO") == 0 ?
+-			       rcpt_domain : relay);
++		    relay = 0;
++		} else if (strcasecmp_utf8(relay, "DUNNO") == 0)
++		    relay = 0;
+ 	    } else if (rp->snd_relay_info
+ 		       && rp->snd_relay_info->error != 0) {
+ 		msg_warn("%s lookup failure", rp->snd_relay_maps_name);
+ 		*flags |= RESOLVE_FLAG_FAIL;
+ 		FREE_MEMORY_AND_RETURN;
++	    } else {
++		relay = 0;
++	    }
++	    /* Enforce all the relayhost precedences in one place. */
++	    if (relay != 0) {
++		vstring_strcpy(nexthop, relay);
+ 	    } else if (*RES_PARAM_VALUE(rp->relayhost))
+ 		vstring_strcpy(nexthop, RES_PARAM_VALUE(rp->relayhost));
+ 	    else
+diff -ur --new-file /var/tmp/postfix-3.0.0/src/util/allascii.c ./src/util/allascii.c
+--- /var/tmp/postfix-3.0.0/src/util/allascii.c	2005-11-11 20:22:13.000000000 -0500
++++ ./src/util/allascii.c	2015-02-17 11:40:23.000000000 -0500
+@@ -8,12 +8,18 @@
+ /*
+ /*	int	allascii(buffer)
+ /*	const char *buffer;
++/*
++/*	int	allascii_len(buffer, len)
++/*	const char *buffer;
++/*	ssize_t	len;
+ /* DESCRIPTION
+ /*	allascii() determines if its argument is an all-ASCII string.
+ /*
+ /*	Arguments:
+ /* .IP buffer
+ /*	The null-terminated input string.
++/* .IP len
++/*	The string length, -1 to determine the length dynamically.
+ /* LICENSE
+ /* .ad
+ /* .fi
+@@ -29,21 +35,25 @@
+ 
+ #include <sys_defs.h>
+ #include <ctype.h>
++#include <string.h>
+ 
+ /* Utility library. */
+ 
+ #include "stringops.h"
+ 
+-/* allascii - return true if string is all ASCII */
++/* allascii_len - return true if string is all ASCII */
+ 
+-int     allascii(const char *string)
++int     allascii_len(const char *string, ssize_t len)
+ {
+     const char *cp;
+     int     ch;
+ 
+-    if (*string == 0)
++    if (len < 0)
++	len = strlen(string);
++    if (len == 0)
+ 	return (0);
+-    for (cp = string; (ch = *(unsigned char *) cp) != 0; cp++)
++    for (cp = string; cp < string + len
++	 && (ch = *(unsigned char *) cp) != 0; cp++)
+ 	if (!ISASCII(ch))
+ 	    return (0);
+     return (1);
+diff -ur --new-file /var/tmp/postfix-3.0.0/src/util/strcasecmp_utf8.c ./src/util/strcasecmp_utf8.c
+--- /var/tmp/postfix-3.0.0/src/util/strcasecmp_utf8.c	2015-01-30 06:44:31.000000000 -0500
++++ ./src/util/strcasecmp_utf8.c	2015-04-09 19:58:39.000000000 -0400
+@@ -130,17 +130,14 @@
+     /*
+      * Short-circuit optimization for ASCII-only text. This may be slower
+      * than using a cache for all results. See comments above for limitations
+-     * of strcasecmp(). XXX We could avoid the vstring_strncpy() if
+-     * allascii() had a length argument.
++     * of strcasecmp().
+      */
+-    vstring_strncpy(f1, s1, len);
+-    vstring_strncpy(f2, s2, len);
+-    if (allascii(STR(f1)) && allascii(STR(f2)))
+-	return (strncasecmp(STR(f1), STR(f2), len));
++    if (allascii_len(s1, len) && allascii_len(s2, len))
++	return (strncasecmp(s1, s2, len));
+ 
+     /*
+      * Caution: casefolding may change the number of bytes. See comments
+-     * above for concerns about strcpy().
++     * above for concerns about strcmp().
+      */
+     flags &= CASEF_FLAG_UTF8;
+     casefoldx(flags, f1, s1, len);
+diff -ur --new-file /var/tmp/postfix-3.0.0/src/util/stringops.h ./src/util/stringops.h
+--- /var/tmp/postfix-3.0.0/src/util/stringops.h	2015-01-27 19:36:24.000000000 -0500
++++ ./src/util/stringops.h	2015-02-11 20:11:06.000000000 -0500
+@@ -44,7 +44,7 @@
+ extern int alldig(const char *);
+ extern int allprint(const char *);
+ extern int allspace(const char *);
+-extern int allascii(const char *);
++extern int allascii_len(const char *, ssize_t);
+ extern const char *split_nameval(char *, char **, char **);
+ extern int valid_utf8_string(const char *, ssize_t);
+ extern size_t balpar(const char *, const char *);
+@@ -62,6 +62,7 @@
+  /*
+   * Convenience wrappers for most-common use cases.
+   */
++#define allascii(s)	allascii_len((s), -1)
+ #define casefold(dst, src) \
+     casefoldx(util_utf8_enable ? CASEF_FLAG_UTF8 : 0, (dst), (src), -1)
+ #define casefold_len(dst, src, len) \

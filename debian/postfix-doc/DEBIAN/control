@@ -1,0 +1,18 @@
+Package: postfix-doc
+Source: postfix
+Version: 3.0.3-0ubuntu0~trusty
+Architecture: all
+Maintainer: LaMont Jones <lamont@debian.org>
+Installed-Size: 3622
+Suggests: postfix
+Section: doc
+Priority: extra
+Homepage: http://www.postfix.org
+Description: Documentation for Postfix
+ Postfix is Wietse Venema's mail transport agent that started life as an
+ alternative to the widely-used Sendmail program.  Postfix attempts to
+ be fast, easy to administer, and secure, while at the same time being
+ sendmail compatible enough to not upset existing users. Thus, the outside
+ has a sendmail-ish flavor, but the inside is completely different.
+ .
+ This package provides the documentation for Postfix.

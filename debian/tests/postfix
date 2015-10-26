@@ -1,0 +1,16 @@
+#!/bin/bash
+#----------------
+# Testing postfix
+#----------------
+set -e
+
+# reconfigure postfix
+debconf-set-selections <<< "postfix postfix/mailname string localhost" 2>&1
+debconf-set-selections <<< "postfix postfix/main_mailer_type string 'Internet Site'" 2>&1
+
+# install and modify
+hostname localhost
+apt-get install -y postfix 2>&1
+hostname --fqdn > /etc/mailname
+/etc/init.d/postfix restart 2>&1
+python `dirname $0`/test-postfix.py 2>&1

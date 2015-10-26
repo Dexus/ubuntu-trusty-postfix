@@ -1,0 +1,218 @@
+# Do not edit -- this file documents how Postfix was built for your machine.
+#----------------------------------------------------------------
+# Start of summary of user-configurable 'make makefiles' options.
+# CCARGS=-DDEBIAN -DUSE_DYNAMIC_MAPS -DHAS_PCRE -DHAS_LDAP -DUSE_LDAP_SASL -DHAS_SQLITE -DMYORIGIN_FROM_FILE  -DHAS_CDB -DHAS_MYSQL -I/usr/include/mysql -DHAS_PGSQL -I/usr/include/postgresql -DHAS_SQLITE -I/usr/include -DHAS_SSL -I/usr/include/openssl -DUSE_SASL_AUTH -I/usr/include/sasl -DUSE_CYRUS_SASL -DUSE_TLS
+# AUXLIBS=-lssl -lcrypto -lsasl2 -lpthread -L/build-src/src/postfix-3.0.3/debian
+# shared=yes
+# dynamicmaps=yes
+# pie=
+# End of summary of user-configurable 'make makefiles' options.
+#--------------------------------------------------------------
+# System-dependent settings and compiler/linker overrides.
+SYSTYPE	= LINUX3
+_AR	= ar
+ARFL	= rv
+_RANLIB	= ranlib
+SYSLIBS	= -lssl -lcrypto -lsasl2 -lpthread -L/build-src/src/postfix-3.0.3/debian -ldb -lnsl -lresolv -ldl -L/usr/local/lib -licuuc 
+CC	= gcc -I. -I../../include -DDEBIAN -DUSE_DYNAMIC_MAPS -DHAS_PCRE -DHAS_LDAP -DUSE_LDAP_SASL -DHAS_SQLITE -DMYORIGIN_FROM_FILE -DHAS_CDB -DHAS_MYSQL -I/usr/include/mysql -DHAS_PGSQL -I/usr/include/postgresql -DHAS_SQLITE -I/usr/include -DHAS_SSL -I/usr/include/openssl -DUSE_SASL_AUTH -I/usr/include/sasl -DUSE_CYRUS_SASL -DUSE_TLS -DUSE_DYNAMIC_LIBS -DUSE_DYNAMIC_MAPS $(WARN)
+OPT	= -O2
+DEBUG	= 
+AWK	= awk
+STRCASE = 
+EXPORT	= CCARGS='-I. -I../../include -DDEBIAN -DUSE_DYNAMIC_MAPS -DHAS_PCRE -DHAS_LDAP -DUSE_LDAP_SASL -DHAS_SQLITE -DMYORIGIN_FROM_FILE -DHAS_CDB -DHAS_MYSQL -I/usr/include/mysql -DHAS_PGSQL -I/usr/include/postgresql -DHAS_SQLITE -I/usr/include -DHAS_SSL -I/usr/include/openssl -DUSE_SASL_AUTH -I/usr/include/sasl -DUSE_CYRUS_SASL -DUSE_TLS -DUSE_DYNAMIC_LIBS -DUSE_DYNAMIC_MAPS' OPT='-O2' DEBUG=''
+WARN	= -Wall -Wno-comment -Wformat -Wimplicit -Wmissing-prototypes \
+	-Wparentheses -Wstrict-prototypes -Wswitch -Wuninitialized \
+	-Wunused -Wno-missing-braces
+DEFINED_MAP_TYPES = pcre ldap sqlite cdb mysql pgsql ssl
+MAKE_FIX = 
+# Switch between Postfix static and dynamically-linked libraries.
+AR	= :
+RANLIB	= :
+LIB_PREFIX = postfix-
+LIB_SUFFIX = .so
+SHLIB_CFLAGS = -fPIC
+SHLIB_DIR = /usr/lib/postfix
+SHLIB_ENV = LD_LIBRARY_PATH=/build-src/src/postfix-3.0.3/lib
+SHLIB_LD = gcc -shared -Wl,-soname,${LIB}
+SHLIB_SYSLIBS = -lssl -lcrypto -lsasl2 -lpthread -L/build-src/src/postfix-3.0.3/debian -ldb -lnsl -lresolv -ldl -L/usr/local/lib -licuuc
+SHLIB_RPATH = -Wl,--enable-new-dtags -Wl,-rpath,${SHLIB_DIR}
+# Switch between dynamicmaps.cf plugins and hard-linked databases.
+NON_PLUGIN_MAP_OBJ = 
+PLUGIN_MAP_OBJ = $(MAP_OBJ)
+PLUGIN_MAP_OBJ_UPDATE = plugin_map_obj_update
+PLUGIN_MAP_SO_MAKE = plugin_map_so_make
+PLUGIN_MAP_SO_UPDATE = plugin_map_so_update
+PLUGIN_LD = gcc -shared
+# Application-specific rules.
+SHELL	= /bin/sh
+SRCS	= smtp-source.c smtp-sink.c qmqp-source.c qmqp-sink.c
+OBJS	= smtp-source.o smtp-sink.o qmqp-source.o qmqp-sink.o
+HDRS	= 
+TESTSRC	= 
+DEFS	= -I. -I$(INC_DIR) -D$(SYSTYPE)
+CFLAGS	= $(DEBUG) $(OPT) $(DEFS)
+TESTPROG= 
+INC_DIR	= ../../include
+PROG	= smtp-source smtp-sink qmqp-source qmqp-sink
+LIBS	= ../../lib/lib$(LIB_PREFIX)global$(LIB_SUFFIX) \
+	../../lib/lib$(LIB_PREFIX)util$(LIB_SUFFIX)
+
+.c.o:;	$(CC) $(CFLAGS) -c $*.c
+
+all:	$(PROG)
+
+$(OBJS): ../../conf/makedefs.out
+
+Makefile: Makefile.in
+	cat ../../conf/makedefs.out $? >$@
+
+smtp-sink: smtp-sink.o $(LIBS)
+	$(CC) $(CFLAGS) $(SHLIB_RPATH) -o $@ smtp-sink.o $(LIBS) $(SYSLIBS)
+
+smtp-source: smtp-source.o $(LIBS)
+	$(CC) $(CFLAGS) $(SHLIB_RPATH) -o $@ smtp-source.o $(LIBS) $(SYSLIBS)
+
+qmqp-sink: qmqp-sink.o $(LIBS)
+	$(CC) $(CFLAGS) $(SHLIB_RPATH) -o $@ qmqp-sink.o $(LIBS) $(SYSLIBS)
+
+qmqp-source: qmqp-source.o $(LIBS)
+	$(CC) $(CFLAGS) $(SHLIB_RPATH) -o $@ qmqp-source.o $(LIBS) $(SYSLIBS)
+
+test:	$(TESTPROG)
+
+tests:
+
+root_tests:
+
+update: ../../bin/smtp-source ../../bin/smtp-sink ../../bin/qmqp-source \
+	../../bin/qmqp-sink
+
+../../bin/smtp-source: smtp-source
+	cp $? $@
+
+../../bin/smtp-sink: smtp-sink
+	cp $? $@
+
+../../bin/qmqp-source: qmqp-source
+	cp $? $@
+
+../../bin/qmqp-sink: qmqp-sink
+	cp $? $@
+
+printfck: $(OBJS) $(PROG)
+	rm -rf printfck
+	mkdir printfck
+	sed '1,/^# do not edit/!d' Makefile >printfck/Makefile
+	set -e; for i in *.c; do printfck -f .printfck $$i >printfck/$$i; done
+	cd printfck; make "INC_DIR=../../../include" `cd ..; ls *.o`
+
+lint:
+	lint $(DEFS) $(SRCS) $(LINTFIX)
+
+clean:
+	rm -f *.o *core $(PROG) $(TESTPROG) junk
+	rm -rf printfck
+
+tidy:	clean
+
+depend: $(MAKES)
+	(sed '1,/^# do not edit/!d' Makefile.in; \
+	set -e; for i in [a-z][a-z0-9]*.c; do \
+	    $(CC) -E $(DEFS) $(INCL) $$i | grep -v '[<>]' | sed -n -e '/^# *1 *"\([^"]*\)".*/{' \
+	    -e 's//'`echo $$i|sed 's/c$$/o/'`': \1/' \
+	    -e 's/o: \.\//o: /' -e p -e '}' ; \
+	done | sort -u) | grep -v '[.][o][:][ ][/]' >$$$$ && mv $$$$ Makefile.in
+	@$(EXPORT) make -f Makefile.in Makefile 1>&2
+
+# do not edit below this line - it is generated by 'make depend'
+qmqp-sink.o: ../../include/check_arg.h
+qmqp-sink.o: ../../include/events.h
+qmqp-sink.o: ../../include/htable.h
+qmqp-sink.o: ../../include/inet_proto.h
+qmqp-sink.o: ../../include/iostuff.h
+qmqp-sink.o: ../../include/listen.h
+qmqp-sink.o: ../../include/mail_version.h
+qmqp-sink.o: ../../include/msg.h
+qmqp-sink.o: ../../include/msg_vstream.h
+qmqp-sink.o: ../../include/mymalloc.h
+qmqp-sink.o: ../../include/netstring.h
+qmqp-sink.o: ../../include/qmqp_proto.h
+qmqp-sink.o: ../../include/sys_defs.h
+qmqp-sink.o: ../../include/vbuf.h
+qmqp-sink.o: ../../include/vstream.h
+qmqp-sink.o: ../../include/vstring.h
+qmqp-sink.o: qmqp-sink.c
+qmqp-source.o: ../../include/check_arg.h
+qmqp-source.o: ../../include/connect.h
+qmqp-source.o: ../../include/events.h
+qmqp-source.o: ../../include/get_hostname.h
+qmqp-source.o: ../../include/host_port.h
+qmqp-source.o: ../../include/inet_proto.h
+qmqp-source.o: ../../include/iostuff.h
+qmqp-source.o: ../../include/mail_date.h
+qmqp-source.o: ../../include/mail_version.h
+qmqp-source.o: ../../include/msg.h
+qmqp-source.o: ../../include/msg_vstream.h
+qmqp-source.o: ../../include/myaddrinfo.h
+qmqp-source.o: ../../include/mymalloc.h
+qmqp-source.o: ../../include/netstring.h
+qmqp-source.o: ../../include/qmqp_proto.h
+qmqp-source.o: ../../include/sane_connect.h
+qmqp-source.o: ../../include/split_at.h
+qmqp-source.o: ../../include/sys_defs.h
+qmqp-source.o: ../../include/valid_hostname.h
+qmqp-source.o: ../../include/valid_mailhost_addr.h
+qmqp-source.o: ../../include/vbuf.h
+qmqp-source.o: ../../include/vstream.h
+qmqp-source.o: ../../include/vstring.h
+qmqp-source.o: qmqp-source.c
+smtp-sink.o: ../../include/check_arg.h
+smtp-sink.o: ../../include/chroot_uid.h
+smtp-sink.o: ../../include/events.h
+smtp-sink.o: ../../include/get_hostname.h
+smtp-sink.o: ../../include/htable.h
+smtp-sink.o: ../../include/inet_proto.h
+smtp-sink.o: ../../include/iostuff.h
+smtp-sink.o: ../../include/listen.h
+smtp-sink.o: ../../include/mail_date.h
+smtp-sink.o: ../../include/mail_version.h
+smtp-sink.o: ../../include/make_dirs.h
+smtp-sink.o: ../../include/msg.h
+smtp-sink.o: ../../include/msg_vstream.h
+smtp-sink.o: ../../include/myaddrinfo.h
+smtp-sink.o: ../../include/mymalloc.h
+smtp-sink.o: ../../include/myrand.h
+smtp-sink.o: ../../include/sane_accept.h
+smtp-sink.o: ../../include/smtp_stream.h
+smtp-sink.o: ../../include/stringops.h
+smtp-sink.o: ../../include/sys_defs.h
+smtp-sink.o: ../../include/vbuf.h
+smtp-sink.o: ../../include/vstream.h
+smtp-sink.o: ../../include/vstring.h
+smtp-sink.o: ../../include/vstring_vstream.h
+smtp-sink.o: smtp-sink.c
+smtp-source.o: ../../include/check_arg.h
+smtp-source.o: ../../include/compat_va_copy.h
+smtp-source.o: ../../include/connect.h
+smtp-source.o: ../../include/events.h
+smtp-source.o: ../../include/get_hostname.h
+smtp-source.o: ../../include/host_port.h
+smtp-source.o: ../../include/inet_proto.h
+smtp-source.o: ../../include/iostuff.h
+smtp-source.o: ../../include/mail_date.h
+smtp-source.o: ../../include/mail_version.h
+smtp-source.o: ../../include/msg.h
+smtp-source.o: ../../include/msg_vstream.h
+smtp-source.o: ../../include/myaddrinfo.h
+smtp-source.o: ../../include/mymalloc.h
+smtp-source.o: ../../include/sane_connect.h
+smtp-source.o: ../../include/smtp_stream.h
+smtp-source.o: ../../include/split_at.h
+smtp-source.o: ../../include/sys_defs.h
+smtp-source.o: ../../include/valid_hostname.h
+smtp-source.o: ../../include/valid_mailhost_addr.h
+smtp-source.o: ../../include/vbuf.h
+smtp-source.o: ../../include/vstream.h
+smtp-source.o: ../../include/vstring.h
+smtp-source.o: ../../include/vstring_vstream.h
+smtp-source.o: smtp-source.c

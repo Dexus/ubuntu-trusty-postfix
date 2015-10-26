@@ -1,0 +1,10 @@
+char *var_psc_rej_footer;
+char *var_psc_cmd_time;
+char *var_smtpd_exp_filter;
+char *var_forward_path;
+char *var_smtpd_rej_footer;
+char *var_psc_exp_filter;
+char *var_mailbox_command;
+char *var_def_rbl_reply;
+char *var_luser_relay;
+char *var_exec_directory;

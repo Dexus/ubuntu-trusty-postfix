@@ -1,0 +1,8 @@
+postfix_3.0.3-0ubuntu0~trusty_amd64.deb mail extra
+postfix-ldap_3.0.3-0ubuntu0~trusty_amd64.deb mail extra
+postfix-cdb_3.0.3-0ubuntu0~trusty_amd64.deb mail extra
+postfix-pcre_3.0.3-0ubuntu0~trusty_amd64.deb mail extra
+postfix-mysql_3.0.3-0ubuntu0~trusty_amd64.deb mail extra
+postfix-pgsql_3.0.3-0ubuntu0~trusty_amd64.deb mail extra
+postfix-dev_3.0.3-0ubuntu0~trusty_all.deb devel extra
+postfix-doc_3.0.3-0ubuntu0~trusty_all.deb doc extra
